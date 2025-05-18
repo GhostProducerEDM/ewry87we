@@ -1,57 +1,68 @@
-$(document).ready(function() {
-    // 1. Объект с данными: артикул → {название, ссылка}
-    const products = {
-        'VCL00001': {
-            name: "VOCAL TEST 1",
-            url: 'https://drive.google.com/uc?export=download&id=10lfHKyJGcdRqGeO5AQoOci8UGOYL8xvC'
-        },
-        'VCL00002': {
-            name: "VOCAL TEST 2", 
-            url: 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa'
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    var linkMass = {
+        'VCL00001': 'https://drive.google.com/uc?export=download&id=10lfHKyJGcdRqGeO5AQoOci8UGOYL8xvC',
+        'VCL00002': 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa'
     };
 
-    // 2. Блокировка повторных выполнений
-    let isProcessing = false;
+    var isProcessing = false;
 
     function generateLinks() {
-        if(isProcessing) return;
+        if (isProcessing) return;
         isProcessing = true;
-        
-        let result = [];
-        
-        $('.t706__product').each(function() {
-            const artPrd = $(this).find('.t706__product-title div:last').text().trim();
-            if(products[artPrd]) {
-                // Формируем текст с названием и ссылкой
-                result.push(
-                    `${products[artPrd].name}\n` + 
-                    `Скачать: ${products[artPrd].url}`
-                );
+
+        var uniqueLinks = {};
+        document.querySelectorAll('.t706__product').forEach(function(el) {
+            var artPrd = el.querySelector('.t706__product-title div:last-child');
+            if (artPrd) {
+                var text = artPrd.textContent.trim();
+                if (linkMass[text]) {
+                    uniqueLinks[linkMass[text]] = true;
+                }
             }
         });
 
-        // 3. Добавляем нумерацию и разделители
-        const formatted = result
-            .map((text, index) => `${index + 1}. ${text}`)
-            .join('\n\n'); // Двойной перенос между продуктами
+        var result = Object.keys(uniqueLinks).map(function(link, i) {
+            return (i + 1) + ') ' + link;
+        }).join('\n');
 
-        $('input[name="location"]').val(formatted);
-        
-        setTimeout(() => {
-            $('input[name="location"]').val('');
+        var input = document.querySelector('input[name="location"]');
+        if (input) {
+            input.value = result;
+
+            setTimeout(function() {
+                input.value = '';
+                isProcessing = false;
+            }, 6000);
+        } else {
             isProcessing = false;
-        }, 6000);
+        }
     }
 
-    // 4. Обработчики событий (без изменений)
-    $(document).off('click', '.t706 .t-submit').on('click', '.t706 .t-submit', function(e) {
-        e.preventDefault();
-        generateLinks();
-    });
-    
-    $('.t706 form').off('submit').on('submit', function() {
-        generateLinks();
-        return true;
-    });
+    function attachHandlers() {
+        document.querySelectorAll('.t706 .t-submit').forEach(function(button) {
+            if (!button.classList.contains('custom-handler-attached')) {
+                button.classList.add('custom-handler-attached');
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    generateLinks();
+                });
+            }
+        });
+
+        document.querySelectorAll('.t706 form').forEach(function(form) {
+            if (!form.classList.contains('custom-form-handler-attached')) {
+                form.classList.add('custom-form-handler-attached');
+                form.addEventListener('submit', function() {
+                    generateLinks();
+                    return true;
+                });
+            }
+        });
+    }
+
+    // Первичная установка обработчиков
+    attachHandlers();
+
+    // Проверка изменений DOM каждые 2 секунды
+    setInterval(attachHandlers, 2000);
 });
