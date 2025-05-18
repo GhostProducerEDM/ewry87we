@@ -1,65 +1,81 @@
-// 1. Ждем полной загрузки страницы
-document.addEventListener('DOMContentLoaded', function() {
-    // 2. Ссылки на товары (артикул → URL)
-    const productLinks = {
+// 1. Выносим логику в отдельный namespace
+if (!window.MyTildaCart) {
+  window.MyTildaCart = (function() {
+    // 2. Конфигурация
+    const config = {
+      links: {
         'VCL00001': 'https://drive.google.com/...',
         'VCL00002': 'https://drive.google.com/...'
+      },
+      selectors: {
+        products: '.t706__product, .t-item',
+        productCode: '.t706__product-title div:last, .js-product-code',
+        submitBtn: '.t-submit, .js-order-button',
+        form: '.t-form',
+        locationField: 'input[name="location"], textarea[name="location"]'
+      }
     };
 
-    // 3. Функция для заполнения поля
-    function updateLocationField() {
-        const links = [];
-        let counter = 1;
-        
-        // Ищем все товары в корзине (новые селекторы)
-        document.querySelectorAll('.t-item, .t706__product').forEach(item => {
-            // Пробуем разные варианты получения артикула
-            const artElement = item.querySelector('.js-product-code, .t-product__title code, .t706__product-title div:last-child');
-            if (artElement) {
-                const art = artElement.textContent.trim();
-                if (productLinks[art] && !links.includes(productLinks[art])) {
-                    links.push(`${counter++}) ${productLinks[art]}`);
-                }
-            }
-        });
-        
-        // Ищем поле location (пробуем разные варианты)
-        const locationField = document.querySelector('input[name="location"], input[name="download_links"], textarea[name="location"]');
-        if (locationField) {
-            locationField.value = links.join('\n');
-            console.log('Ссылки записаны:', locationField.value);
-        } else {
-            console.error('Поле location не найдено!');
+    // 3. Состояние системы
+    let state = {
+      initialized: false,
+      processing: false
+    };
+
+    // 4. Основная функция
+    function generateLinks() {
+      if (state.processing) return false;
+      state.processing = true;
+
+      const links = new Set(); // Используем Set для уникальности
+      let counter = 1;
+
+      // Поиск товаров
+      document.querySelectorAll(config.selectors.products).forEach(item => {
+        const codeElement = item.querySelector(config.selectors.productCode);
+        if (codeElement) {
+          const art = codeElement.textContent.trim();
+          if (config.links[art]) {
+            links.add(`${counter++}) ${config.links[art]}`);
+          }
         }
-        
-        return links.length > 0;
+      });
+
+      // Запись в поле
+      const locationField = document.querySelector(config.selectors.locationField);
+      if (locationField) {
+        locationField.value = Array.from(links).join('\n');
+        console.log('Ссылки обновлены:', locationField.value);
+      }
+
+      state.processing = false;
+      return links.size > 0;
     }
 
-    // 4. Обработчик для кнопки отправки
-    function handleSubmit(e) {
-        if (!updateLocationField()) {
-            console.warn('Не найдены товары для формирования ссылок');
-            return;
+    // 5. Инициализация
+    function init() {
+      if (state.initialized) return;
+      state.initialized = true;
+
+      // Обработчик для кнопки
+      document.querySelector(config.selectors.submitBtn)?.addEventListener('click', function(e) {
+        if (generateLinks()) {
+          setTimeout(() => {
+            document.querySelector(config.selectors.form)?.submit();
+          }, 300);
         }
-        
-        // Даем время на обновление поля перед отправкой
-        setTimeout(() => {
-            const form = document.querySelector('.t-form');
-            if (form) {
-                form.submit();
-            }
-        }, 300);
+      });
+
+      // Дополнительный обработчик для формы
+      document.querySelector(config.selectors.form)?.addEventListener('submit', function(e) {
+        generateLinks();
+      });
     }
 
-    // 5. Вешаем обработчики
-    const submitBtn = document.querySelector('.t-submit, .js-order-button');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', handleSubmit);
-    }
-    
-    // Дополнительно ловим отправку формы
-    const form = document.querySelector('.t-form');
-    if (form) {
-        form.addEventListener('submit', handleSubmit);
-    }
-});
+    return { init };
+  })();
+
+  // Запускаем после полной загрузки
+  document.addEventListener('DOMContentLoaded', MyTildaCart.init);
+  window.addEventListener('load', MyTildaCart.init);
+}
