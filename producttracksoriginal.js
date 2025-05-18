@@ -8,21 +8,23 @@ $(document).ready(function() {
     // 2. Находим товары и формируем ссылки
     function generateLinks() {
         var result = [];
-        $('.t706__product').each(function() {
+        $('.t706__product').each(function(i) { // Добавил индекс (i)
             var art = $(this).find('.t706__product-title div:last').text().trim();
-            if (links[art]) result.push(links[art]);
+            if (links[art] && !result.includes(links[art])) { // Проверка на дубли
+                result.push((result.length + 1) + ') ' + links[art]); // Нумерация
+            }
         });
         
-        // Записываем в скрытое поле (проверяем оба варианта имени)
+        // Записываем в поле (проверяем оба варианта)
         $('input[name="location"], input[name="hidden_links"]').val(result.join('\n'));
     }
 
-    // 3. Вешаем на кнопку "Отправить"
-    $('.t706 .t-submit').click(function(e) {
+    // 3. Вешаем на кнопку "Отправить" (с защитой от двойного клика)
+    $('.t706 .t-submit').off('click').on('click', function(e) {
         e.preventDefault();
         generateLinks();
         setTimeout(function() { 
-            $('form').submit(); // Отправляем форму после подстановки
+            $('form').submit();
         }, 500);
     });
 });
