@@ -1,81 +1,137 @@
-// 1. Выносим логику в отдельный namespace
-if (!window.MyTildaCart) {
-  window.MyTildaCart = (function() {
-    // 2. Конфигурация
-    const config = {
-      links: {
-        'VCL00001': 'https://drive.google.com/...',
-        'VCL00002': 'https://drive.google.com/...'
-      },
-      selectors: {
-        products: '.t706__product, .t-item',
-        productCode: '.t706__product-title div:last, .js-product-code',
-        submitBtn: '.t-submit, .js-order-button',
-        form: '.t-form',
-        locationField: 'input[name="location"], textarea[name="location"]'
-      }
+$(document).ready(function() {
+    // 1. Конфигурация (ваши данные)
+    const linkMass = { 
+        'VCL00001': 'https://drive.google.com/uc?export=download&id=10lfHKyJGcdRqGeO5AQoOci8UGOYL8xvC',
+        'VCL00002': 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa'
     };
 
-    // 3. Состояние системы
-    let state = {
-      initialized: false,
-      processing: false
+    // 2. Состояние системы
+    let systemState = {
+        isProcessing: false,
+        lastExecution: 0
     };
 
-    // 4. Основная функция
+    // 3. Основная функция (ваш код + защита)
     function generateLinks() {
-      if (state.processing) return false;
-      state.processing = true;
-
-      const links = new Set(); // Используем Set для уникальности
-      let counter = 1;
-
-      // Поиск товаров
-      document.querySelectorAll(config.selectors.products).forEach(item => {
-        const codeElement = item.querySelector(config.selectors.productCode);
-        if (codeElement) {
-          const art = codeElement.textContent.trim();
-          if (config.links[art]) {
-            links.add(`${counter++}) ${config.links[art]}`);
-          }
+        // Защита от частых вызовов
+        const now = Date.now();
+        if (systemState.isProcessing || (now - systemState.lastExecution < 1000)) {
+            console.log('Защита: пропускаем дублирующий вызов');
+            return;
         }
-      });
-
-      // Запись в поле
-      const locationField = document.querySelector(config.selectors.locationField);
-      if (locationField) {
-        locationField.value = Array.from(links).join('\n');
-        console.log('Ссылки обновлены:', locationField.value);
-      }
-
-      state.processing = false;
-      return links.size > 0;
+        
+        systemState.isProcessing = true;
+        systemState.lastExecution = now;
+        
+        try {
+            const uniqueLinks = {};
+            
+            // Ищем товары (с защитой от ошибок)
+            const $products = $('.t706__product');
+            if ($products.length === 0) {
+                console.warn('Не найдены товары в корзине!');
+                return;
+            }
+            
+            $products.each(function() {
+                try {
+                    const artPrd = $(this).find('.t706__product-title div:last').text().trim();
+                    if (linkMass[artPrd]) {
+                        uniqueLinks[linkMass[artPrd]] = true;
+                    }
+                } catch (e) {
+                    console.error('Ошибка обработки товара:', e);
+                }
+            });
+            
+            // Формируем результат
+            const result = Object.keys(uniqueLinks)
+                .map((link, index) => `${index + 1}) ${link}`)
+                .join('\n');
+            
+            // Записываем в поле (с проверкой)
+            const $field = $('input[name="location"]');
+            if ($field.length) {
+                $field.val(result)
+                      .attr('data-last-update', now);
+                console.log('Ссылки успешно записаны');
+            } else {
+                console.error('Поле location не найдено!');
+            }
+            
+        } finally {
+            systemState.isProcessing = false;
+        }
     }
 
-    // 5. Инициализация
-    function init() {
-      if (state.initialized) return;
-      state.initialized = true;
-
-      // Обработчик для кнопки
-      document.querySelector(config.selectors.submitBtn)?.addEventListener('click', function(e) {
-        if (generateLinks()) {
-          setTimeout(() => {
-            document.querySelector(config.selectors.form)?.submit();
-          }, 300);
-        }
-      });
-
-      // Дополнительный обработчик для формы
-      document.querySelector(config.selectors.form)?.addEventListener('submit', function(e) {
-        generateLinks();
-      });
+    // 4. Обработчики событий (с улучшенной защитой)
+    function setupEventListeners() {
+        // Удаляем все предыдущие обработчики
+        $(document).off('click.tildaLinks', '.t706 .t-submit')
+                   .off('submit.tildaLinks', '.t706 form');
+        
+        // Новые обработчики с namespace
+        $(document).on('click.tildaLinks', '.t706 .t-submit', function(e) {
+            e.preventDefault();
+            generateLinks();
+            
+            // Авто-отправка формы через 300мс
+            setTimeout(() => {
+                const $form = $(this).closest('form');
+                if ($form.length) {
+                    $form.trigger('submit');
+                }
+            }, 300);
+        });
+        
+        $('.t706 form').on('submit.tildaLinks', function() {
+            generateLinks();
+            return true;
+        });
     }
 
-    return { init };
-  })();
+    // 5. Инициализация + защита от повторов
+    let initAttempts = 0;
+    const maxInitAttempts = 3;
+    
+    function initialize() {
+        initAttempts++;
+        
+        try {
+            setupEventListeners();
+            console.log('Скрипт инициализирован успешно');
+            
+            // Дополнительная проверка через 5 сек
+            setTimeout(() => {
+                if (!$('input[name="location"]').length) {
+                    console.warn('Поле location не найдено при повторной проверке!');
+                    if (initAttempts < maxInitAttempts) {
+                        initialize();
+                    }
+                }
+            }, 5000);
+            
+        } catch (e) {
+            console.error('Ошибка инициализации:', e);
+            if (initAttempts < maxInitAttempts) {
+                setTimeout(initialize, 1000 * initAttempts);
+            }
+        }
+    }
 
-  // Запускаем после полной загрузки
-  document.addEventListener('DOMContentLoaded', MyTildaCart.init);
-  window.addEventListener('load', MyTildaCart.init);
-}
+    // Первый запуск
+    initialize();
+
+    // 6. Защита от изменений DOM (для динамических страниц)
+    const observer = new MutationObserver(function(mutations) {
+        if (!$('.t706 .t-submit').length) {
+            console.log('Обнаружены изменения DOM, переинициализация...');
+            initialize();
+        }
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+});
