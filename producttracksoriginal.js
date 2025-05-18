@@ -1,46 +1,28 @@
 $(document).ready(function() {
-    var linkMass = { 
+    // 1. Ссылки на товары (артикул → URL)
+    var links = {
         'VCL00001': 'https://drive.google.com/uc?export=download&id=10lfHKyJGcdRqGeO5AQoOci8UGOYL8xvC',
         'VCL00002': 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa'
     };
 
-    // 1. Блокируем повторные выполнения
-    var isProcessing = false;
-    
-    // 2. Полностью переработанная функция
+    // 2. Находим товары и формируем ссылки
     function generateLinks() {
-        if (isProcessing) return;
-        isProcessing = true;
-        
-        var uniqueLinks = {};
+        var result = [];
         $('.t706__product').each(function() {
-            var artPrd = $(this).find('.t706__product-title div:last').text().trim();
-            if (linkMass[artPrd]) {
-                uniqueLinks[linkMass[artPrd]] = true; // Хэш для уникальности
-            }
+            var art = $(this).find('.t706__product-title div:last').text().trim();
+            if (links[art]) result.push(links[art]);
         });
         
-        var result = Object.keys(uniqueLinks).map(function(link, index) {
-            return (index + 1) + ') ' + link;
-        }).join('\n');
-        
-        $('input[name="location"]').val(result);
-        
-        setTimeout(function() {
-            $('input[name="location"]').val('');
-            isProcessing = false;
-        }, 6000);
+        // Записываем в скрытое поле (проверяем оба варианта имени)
+        $('input[name="location"], input[name="hidden_links"]').val(result.join('\n'));
     }
-    
-    // 3. Вешаем обработчик с защитой
-    $(document).off('click', '.t706 .t-submit').on('click', '.t706 .t-submit', function(e) {
+
+    // 3. Вешаем на кнопку "Отправить"
+    $('.t706 .t-submit').click(function(e) {
         e.preventDefault();
         generateLinks();
-    });
-    
-    // 4. Дополнительная защита для формы
-    $('.t706 form').off('submit').on('submit', function() {
-        generateLinks();
-        return true;
+        setTimeout(function() { 
+            $('form').submit(); // Отправляем форму после подстановки
+        }, 500);
     });
 });
