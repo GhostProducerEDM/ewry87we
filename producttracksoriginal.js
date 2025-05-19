@@ -1,8 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     var linkMass = {
         'VCL00001': 'https://drive.google.com/uc?export=download&id=10lfHKyJGcdRqGeO5AQoOci8UGOYL8xvC',
-        'VCL00002': 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa'
-        // Добавляй остальные артикула по шаблону
+        'VCL00002': 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa',
+        'VCL00003': 'https://drive.google.com/uc?export=download&id=136fy97SHmVEYosOQP199ubulaWrhmizw',
+        'VCL00004': 'https://drive.google.com/uc?export=download&id=15JA9GxsppNotklquHNaacWiH1BEEe92q',
+        'VCL00005': 'https://drive.google.com/uc?export=download&id=1NeE5r3VB2wLXwGnrL1Wvail8eDgUuqj3',
+        'VCL00006': 'https://drive.google.com/uc?export=download&id=1OYXXq60mu4gMC-CZe7TKmUAJrpNpD6yd',
+        'VCL00007': 'https://drive.google.com/uc?export=download&id=1UI-o5cIFBJOhtKu2tEeHDcN7lLCqXQTM',
+        'VCL00008': 'https://drive.google.com/uc?export=download&id=1Vk8Nu7IxDVpOb51MYxhmUZqJnQ21dWkc',
+        'VCL00009': 'https://drive.google.com/uc?export=download&id=1GAzYH_4zVTcuTAFSMsxuC_JoCSdSFaPx',
+        'VCL00010': 'https://drive.google.com/uc?export=download&id=1S1VhN5P-KABwgudGlkCstRuyQrt5pDaL',
+        'VCL00011': 'https://drive.google.com/uc?export=download&id=12Xl7mdUpsgWuR2gfP77JAyfsAJ_cJ8iL',
+        'VCL00012': 'https://drive.google.com/uc?export=download&id=1igtyGlSU6J_X0tPrflRDuYx3_WoxHQBs',
+                // Добавляй остальные артикула по шаблону
     };
 
     var isProcessing = false;
