@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var linkMass = {
         'VCL00001': 'https://drive.google.com/uc?export=download&id=10lfHKyJGcdRqGeO5AQoOci8UGOYL8xvC',
         'VCL00002': 'https://drive.google.com/uc?export=download&id=1125HgU5kyqUT7xcITADhZ3FDXfYMt0pa'
-        // Добавляй новые артикула сюда по аналогии
+        // Добавляй остальные артикула по шаблону
     };
 
     var isProcessing = false;
@@ -26,8 +26,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         var output = resultList.map(function(item, i) {
-            return (i + 1) + ') Download (' + item.art + '): ' + item.link;
-        }).join('\n');
+            return (i + 1) + ') <a href="' + item.link + '">Download (' + item.art + ')</a>';
+        }).join('<br>'); // делаем перенос строки через <br>
 
         var input = document.querySelector('input[name="location"]');
         if (input) {
